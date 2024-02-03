@@ -1,29 +1,126 @@
-import React,{useState} from "react";
+import React, { useState, useRef } from "react";
 import Header from "./Header";
+import { checkValidData } from "../utils/validate.js";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import { auth } from "../utils/firebase.js";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
-    const [isSignInForm,setIsSignInForm]=useState(true);
+  const [isSignInForm, setIsSignInForm] = useState(true);
+  const [errorMessages, setErrorMessages] = useState(null);
+  const navigate=useNavigate()
+  const email = useRef(null);
+  const password = useRef(null);
+  const name = useRef(null);
 
-    const toggleSignInForm=()=>{
-        setIsSignInForm(!isSignInForm)
+  const toggleSignInForm = () => {
+    setIsSignInForm(!isSignInForm);
+  };
 
+  const handleButtonClick = () => {
+    const message = checkValidData(
+      email.current.value,
+      password.current.value,
+      name.current?.value
+    );
+    console.log(message, "this is mesaage");
+    setErrorMessages(message);
+    if (message) return;
+    if (!isSignInForm) {
+      // signUp Logic
+      createUserWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed up
+          const user = userCredential.user;
+          console.log(user, "this is user");
+          navigate("/browse")
+          // ...
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage1 = error.message;
+          if(errorMessage1){
+            setErrorMessages("Invalid Credentials");
+          }
+        
+        });
+      // PASSWORD 123456@1Aa
+      // EMAIL rishabh@gmail.com
+    } else {
+      // sigInLogic
+      signInWithEmailAndPassword(auth, email.current.value, password.current.value)
+        .then((userCredential) => {
+          // Signed in
+          const user = userCredential.user;
+          console.log(user,"This is Sign In User")
+          navigate("/browse")
+          // ...
+        })
+        .catch((error) => {
+          const errorMessage1 = error.message;
+          if(errorMessage1){
+            setErrorMessages("Invalid Credentials");
+          }
+         
+        
+        });
     }
+  };
   return (
     <div>
       <Header />
       <div className="absolute">
-      <img
-        src="https://assets.nflxext.com/ffe/siteui/vlv3/9134db96-10d6-4a64-a619-a21da22f8999/a449fabb-05e4-4c8a-b062-b0bec7d03085/IN-en-20240115-trifectadaily-perspective_alpha_website_large.jpg"
-        alt=""
-      ></img>
+        <img
+          src="https://assets.nflxext.com/ffe/siteui/vlv3/9134db96-10d6-4a64-a619-a21da22f8999/a449fabb-05e4-4c8a-b062-b0bec7d03085/IN-en-20240115-trifectadaily-perspective_alpha_website_large.jpg"
+          alt=""
+        ></img>
       </div>
-      <form className="w-3/12 absolute p-12 bg-black my-36 mx-auto right-0 left-0 text-white bg-opacity-80">
-      <h1 className="font-bold test-3xl py-4">{isSignInForm?"Sign In":"Sign Up"}</h1>
-        <input className="p-4 my-4 w-full bg-gray-700" type="text" placeholder="Email Address"/>
-      { !isSignInForm && <input className="p-4 my-4 w-full bg-gray-700" type="password" placeholder="Full Name"/>}
-        <input className="p-4 my-4 w-full bg-gray-700" type="text" placeholder="Password"/>
-        <button className="p-4 my-6 bg-red-700 w-full rounded-lg">{isSignInForm?"Sign In":"Sign Up"}</button>
-    <p className="py-4 cursor-pointer" onClick={toggleSignInForm}>{isSignInForm?"New To Netflix ? Sign Up Now":"Already registered ? Sign In Now"}</p>
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className="w-3/12 absolute p-12 bg-black my-36 mx-auto right-0 left-0 text-white bg-opacity-80"
+      >
+        <h1 className="font-bold test-3xl py-4">
+          {isSignInForm ? "Sign In" : "Sign Up"}
+        </h1>
+        <input
+          className="p-4 my-4 w-full bg-gray-700"
+          type="text"
+          placeholder="Email Address"
+          ref={email}
+        />
+        {!isSignInForm && (
+          <input
+            className="p-4 my-4 w-full bg-gray-700"
+            type="text"
+            placeholder="Full Name"
+            ref={name}
+          />
+        )}
+        <input
+          className="p-4 my-4 w-full bg-gray-700"
+          type="password"
+          placeholder="Password"
+          ref={password}
+        />
+        <p className="text-red-500 font-bold text-lg py-2">{errorMessages}</p>
+        <button
+          className="p-4 my-6 bg-red-700 w-full rounded-lg"
+          onClick={handleButtonClick}
+        >
+          {isSignInForm ? "Sign In" : "Sign Up"}
+        </button>
+        <p className="py-4 cursor-pointer" onClick={toggleSignInForm}>
+          {isSignInForm
+            ? "New To Netflix ? Sign Up Now"
+            : "Already registered ? Sign In Now"}
+        </p>
       </form>
     </div>
   );
