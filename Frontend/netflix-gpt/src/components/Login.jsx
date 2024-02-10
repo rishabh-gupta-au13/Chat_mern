@@ -4,14 +4,19 @@ import { checkValidData } from "../utils/validate.js";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  updateProfile,
+
 } from "firebase/auth";
 import { auth } from "../utils/firebase.js";
-import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addUser } from "../utils/userSlice.js";
+
+
 
 const Login = () => {
   const [isSignInForm, setIsSignInForm] = useState(true);
   const [errorMessages, setErrorMessages] = useState(null);
-  const navigate=useNavigate()
+  const dispatch=useDispatch();
   const email = useRef(null);
   const password = useRef(null);
   const name = useRef(null);
@@ -26,7 +31,7 @@ const Login = () => {
       password.current.value,
       name.current?.value
     );
-  
+
     setErrorMessages(message);
     if (message) return;
     if (!isSignInForm) {
@@ -39,36 +44,47 @@ const Login = () => {
         .then((userCredential) => {
           // Signed up
           const user = userCredential.user;
-        
-          navigate("/browse")
+          updateProfile(user,{
+            displayName:name.current.value
+          }).then(()=>{
+            const {uid,email,displayName }= auth.currentUser;
+            dispatch(addUser({uid:uid,email:email,displayName:displayName}))
+          }).catch((error)=>{
+            setErrorMessages("Issue In logging");
+
+
+
+          })
+
+         
           // ...
         })
         .catch((error) => {
-          const errorCode = error.code;
+          
           const errorMessage1 = error.message;
-          if(errorMessage1){
+          if (errorMessage1) {
             setErrorMessages("Invalid Credentials");
           }
-        
         });
       // PASSWORD 123456@1Aa
       // EMAIL rishabh@gmail.com
     } else {
       // sigInLogic
-      signInWithEmailAndPassword(auth, email.current.value, password.current.value)
+      signInWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
         .then((userCredential) => {
           // Signed in
-          const user = userCredential.user;
-          navigate("/browse")
+        //  userCredential.user;
           // ...
         })
         .catch((error) => {
           const errorMessage1 = error.message;
-          if(errorMessage1){
+          if (errorMessage1) {
             setErrorMessages("Invalid Credentials");
           }
-         
-        
         });
     }
   };
